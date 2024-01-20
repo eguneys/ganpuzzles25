@@ -16,9 +16,26 @@ tf.keras.utils.disable_interactive_logging()
 
 import csv
 
-data_path = os.path.join(os.path.dirname(__file__), '../data/thirtk.csv') 
+data_path = os.path.join(os.path.dirname(__file__), '../data/fivek.csv') 
+RESIDUAL_BLOCKS =16
 
-noise_level = 512
+noise_level = 64
+
+l2reg = keras.regularizers.l2(l=0.5 * (0.0001))
+
+def conv_2d(generator, filters):
+
+   generator.add(layers.Conv2D(filters, 
+                               kernel_size=3, 
+                               use_bias=False, 
+                               padding="same",
+                               kernel_initializer='glorot_normal',
+                               kernel_regularizer=l2reg
+                               ))
+   generator.add(layers.LeakyReLU(0.2))
+   generator.add(layers.Dropout(0.3))
+
+
 
 def build_generator():
 
@@ -32,14 +49,15 @@ def build_generator():
     generator.add(layers.Dense(units=512))
 
     generator.add(layers.Reshape([8, 8, 8]))
-    generator.add(layers.Conv2D(filters=16, kernel_size=3))
+    for i in range(RESIDUAL_BLOCKS):
+      conv_2d(generator, 16)
 
     generator.add(layers.LeakyReLU(0.2))
 
     generator.add(layers.Flatten())
     generator.add(layers.Dense(units=13*8*8, activation='sigmoid'))
 
-    generator.compile(loss='binary_crossentropy', optimizer=keras.optimizers.Adam(lr=0.0002, beta_1=0.5))
+    generator.compile(loss='binary_crossentropy', optimizer=keras.optimizers.Adam(learning_rate=0.0002, beta_1=0.5))
 
     return generator
 
@@ -53,17 +71,13 @@ def build_discriminator():
     discriminator.add(layers.Dropout(0.2))
 
     discriminator.add(layers.Reshape([16, 8, 8]))
-    discriminator.add(layers.Conv2D(filters=8, kernel_size=3))
-    discriminator.add(layers.LeakyReLU(0.2))
-    discriminator.add(layers.Dropout(0.3))
-
-    discriminator.add(layers.Conv2D(filters=8, kernel_size=3))
-    discriminator.add(layers.LeakyReLU(0.2))
+    for i in range(RESIDUAL_BLOCKS):
+      conv_2d(discriminator, 8)
 
     discriminator.add(layers.Flatten())
     discriminator.add(layers.Dense(units=1, activation='sigmoid'))
 
-    discriminator.compile(loss='binary_crossentropy', optimizer=keras.optimizers.Adam(lr=0.0002, beta_1=0.5))
+    discriminator.compile(loss='binary_crossentropy', optimizer=keras.optimizers.Adam(learning_rate=0.0002, beta_1=0.5))
 
     return discriminator
 
@@ -139,7 +153,7 @@ def unpack_print(generated_position):
     board = chess.Board.empty()
 
     generated_position = generated_position.reshape(-1, 64)
-    generated_position = np.where(generated_position > 0.8, 1, 0)
+    generated_position = np.where(generated_position > 0.5, 1, 0)
 
     whites = chess.SquareSet(int.from_bytes(np.packbits(generated_position[6]), 'little'))
     blacks = chess.SquareSet(int.from_bytes(np.packbits(generated_position[7]), 'little'))
@@ -243,7 +257,7 @@ def test_pack():
 
 if __name__ == "__main__":
     X_train=get_x_train()
-    train(X_train, epochs=500, batch_size = 256)
+    train(X_train, epochs=500, batch_size = 128)
 
     #test_pack()
 
