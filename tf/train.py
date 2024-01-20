@@ -16,7 +16,7 @@ tf.keras.utils.disable_interactive_logging()
 
 import csv
 
-data_path = os.path.join(os.path.dirname(__file__), '../data/fivek.csv') 
+data_path = os.path.join(os.path.dirname(__file__), '../data/fivem.csv') 
 RESIDUAL_BLOCKS =16
 
 noise_level = 64
