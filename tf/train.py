@@ -13,7 +13,10 @@ from tqdm import tqdm;
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 tf.keras.utils.disable_interactive_logging()
 
+
 import csv
+
+data_path = os.path.join(os.path.dirname(__file__), '../data/thirtk.csv') 
 
 noise_level = 512
 
@@ -28,10 +31,12 @@ def build_generator():
 
     generator.add(layers.Dense(units=512))
 
-    generator.add(layers.Conv2D(units=1024))
+    generator.add(layers.Reshape([8, 8, 8]))
+    generator.add(layers.Conv2D(filters=16, kernel_size=3))
 
     generator.add(layers.LeakyReLU(0.2))
 
+    generator.add(layers.Flatten())
     generator.add(layers.Dense(units=13*8*8, activation='sigmoid'))
 
     generator.compile(loss='binary_crossentropy', optimizer=keras.optimizers.Adam(lr=0.0002, beta_1=0.5))
@@ -47,13 +52,15 @@ def build_discriminator():
     discriminator.add(layers.LeakyReLU(0.2))
     discriminator.add(layers.Dropout(0.2))
 
-    discriminator.add(layers.Conv2D(units=256))
+    discriminator.add(layers.Reshape([16, 8, 8]))
+    discriminator.add(layers.Conv2D(filters=8, kernel_size=3))
     discriminator.add(layers.LeakyReLU(0.2))
     discriminator.add(layers.Dropout(0.3))
 
-    discriminator.add(layers.Conv2D(units=128))
+    discriminator.add(layers.Conv2D(filters=8, kernel_size=3))
     discriminator.add(layers.LeakyReLU(0.2))
 
+    discriminator.add(layers.Flatten())
     discriminator.add(layers.Dense(units=1, activation='sigmoid'))
 
     discriminator.compile(loss='binary_crossentropy', optimizer=keras.optimizers.Adam(lr=0.0002, beta_1=0.5))
@@ -203,7 +210,7 @@ struct_string = '104s'
 def get_x_train():
 
     #file = open('athousand_sorted.csv')
-    file = open('../data/thirtk.csv')
+    file = open(data_path)
     csvreader = csv.reader(file)
     fens = []
     for row in csvreader:
