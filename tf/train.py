@@ -16,8 +16,8 @@ tf.keras.utils.disable_interactive_logging()
 
 import csv
 
-data_path = os.path.join(os.path.dirname(__file__), '../data/fivem.csv') 
-RESIDUAL_BLOCKS =16
+data_path = os.path.join(os.path.dirname(__file__), '../data/thirtyk.csv') 
+RESIDUAL_BLOCKS =8
 
 noise_level = 64
 
@@ -33,7 +33,7 @@ def conv_2d(generator, filters):
                                kernel_regularizer=l2reg
                                ))
    generator.add(layers.LeakyReLU(0.2))
-   generator.add(layers.Dropout(0.3))
+   #generator.add(layers.Dropout(0.1))
 
 
 
@@ -52,8 +52,7 @@ def build_generator():
     for i in range(RESIDUAL_BLOCKS):
       conv_2d(generator, 16)
 
-    generator.add(layers.LeakyReLU(0.2))
-
+    generator.add(layers.Dropout(0.3))
     generator.add(layers.Flatten())
     generator.add(layers.Dense(units=13*8*8, activation='sigmoid'))
 
@@ -74,6 +73,7 @@ def build_discriminator():
     for i in range(RESIDUAL_BLOCKS):
       conv_2d(discriminator, 8)
 
+    discriminator.add(layers.Dropout(0.3))
     discriminator.add(layers.Flatten())
     discriminator.add(layers.Dense(units=1, activation='sigmoid'))
 
@@ -257,7 +257,7 @@ def test_pack():
 
 if __name__ == "__main__":
     X_train=get_x_train()
-    train(X_train, epochs=500, batch_size = 128)
+    train(X_train, epochs=500, batch_size = 64)
 
     #test_pack()
 
